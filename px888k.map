@@ -1,0 +1,371 @@
+address range 0000 to 07f0 inclusive, contains channel data, each channel
+occupying 16 bytes
+
+4460 0625 4460 0625 ffff ffff 0100 ffff  D`.%D`.%........
+ 0 1  2 3  4 5  6 7  8 9  A B  C D  E F
+
+0..3: RX freq, BCD format, 3.5, FFFF if unset
+4..7: TX freq, same format as RX freq
+
+8..9: CTCSS/CDCSS pattern for incoming signals
+      FFFF if unset
+	  for CTCSS it's formatted as BCD 3.1
+      for CDCSS it's 8 followed by three BCD digits denoting the code
+      or C followed by three BCD digits for inverted mode
+A..B: CTCSS/CDCSS pattern for outgoing signals
+      same format as for incoming signals
+
+C: field 20: Compander (00:off, 20:on)
+   field 10: TX power (00:low, 10:high)
+   field 08: modulation width (00:narrow, 08:wide)
+   field 03: BCL (00:off, 01:carrier, 02:QT/DQT)
+
+D: field E0: scrambler no (00:1=off, 20:2, 40:3, 60:4, 80:5, A0:6, C0:7, E0:8)
+   field 10: scrambler (00:off, 10:on)
+   field 0C: opt signal (00:off, 04:DTMF, 08:5-tone, 0C:MSK)
+   field 03: PTT ID: (01:BOT, 02:EOT, 03: BOTH)
+
+
+--------------------------------------------------------------------------------
+
+
+address range 0800 to 0bf0 contains channel name data, each channel allowed
+to occupy eight bytes, but only six are used, names shorter than six bytes
+are space padded on the right
+
+
+5858 5858 5858 ffff 5959 5959 5959 ffff  XXXXXX..YYYYYY..
+ 0 1  2 3  4 5  6 7  8 9  A B  C D  E F
+0..5: name of an odd numbered channel
+6..7: unused (ff)
+8..D: name of an even numbered channel
+E..F: unused (ff)
+
+
+--------------------------------------------------------------------------------
+
+
+addresses 0c00 and 0c10 contains the VFO-A and VFO-B settings, but instead
+of a TX frequency, the second group of four bytes store an offset frequency
+in BCD 3.5 although the two least significant digits are locked to zero,
+and the frequency range of the radio puts an upper bound on the offset,
+so the most significant digit is also never used and is locked to zero
+1550 2500 0010 0000 ffff ffff 5800 ffff
+4400 2500 0010 0000 ffff ffff 9800 ffff
+ 0 1  2 3  4 5  6 7  8 9  A B  C D  E F
+
+C: field C0: duplex sign (00:off, 40:positive, 80:negative)
+
+for other fields see the channel frequency data settings
+
+
+--------------------------------------------------------------------------------
+
+
+address 0c20 contains a 16 byte wide bitfield enumerating what channels exist
+0100 0000 0000 0000 0000 0000 0000 0000  ................
+ 0 1  2 3  4 5  6 7  8 9  A B  C D  E F
+
+0: field 01: channel 1 exists (00:no, 01:yes)
+...
+F: field 80: channel 128 exists (00:no 80:yes)
+
+
+--------------------------------------------------------------------------------
+
+
+address 0c30 contains a 16 byte wide bitfield enumerating what channels are
+are preset in the "scan add" group
+0100 0000 0000 0000 0000 0000 0000 0000  ................
+ 0 1  2 3  4 5  6 7  8 9  A B  C D  E F
+
+0: field 01: scan add for channel 1 (00:no, 01:yes)
+...
+F: field 80: scan add for channel 128 (00:no 80:yes)
+
+
+--------------------------------------------------------------------------------
+
+
+0c40
+0..5: "PX888D", unknown if writable
+6..7: unused/constant FFFF?
+8..9: lower bound of VHF band (typically 134MHz, encoded as 13 40)
+A..B: upper bound of VHF band (typically 176MHz, encoded as 17 60)
+C..D: lower bound of UHF band (typically 400MHz, encoded as 40 00)
+E..F: upper bound of UHF band (typically 480MHz, encoded as 48 00)
+
+
+--------------------------------------------------------------------------------
+
+
+address 0c50 stores the "radio information" string in sixteen bytes, FF if unset
+
+
+--------------------------------------------------------------------------------
+
+
+address 0c60 contains optional features
+c858 1c00 0200 0104 003a 0000 ffff a0ff  .X.......:......
+ 0 1  2 3  4 5  6 7  8 9  A B  C D  E F
+0: field 80: ptt cancel sq (00:no, 80:yes)
+0: field 40: dis ptt id (00:no, 40:yes)
+0: field 30: workmode-B (00:VFO, 10:MR, 20:CH name, 30:CH freq)
+0: field 08: roger tone (00:no, 08:yes)
+0: field 04: MSK reverse (00:no, 04:yes)
+0: field 03: workmode-A (00:VFO, 01:MR, 02:CH name, 03:CH freq)
+0 fully described
+1: field C0: backlight color (00:blue, 40:orange, 80:purple)
+1: field 30: backlight (00:off, 10:auto, 20:on)
+1: field 08: dual/single watch (00:single watch, 08:dual watch)
+1: field 04: auto keylock (00:off 04:on)
+1: field 03: scanmode (00:time, 01:carrier, 02:seek)
+1 fully described
+2: field 80: rx stun (00:no, 80:yes)
+2: field 40: tx stun (00:no, 40:yes)
+2: field 30: boot message mode (00:off, 10:battery voltage, 20:message)
+2: field 08: battery save (00:off, 08:on)
+2: field 04: beep (00:off, 04:on)
+2: field 03: voice announce (00:off, 02:chinese, 03:english)
+2 fully described
+3: field F0: UNKNOWN
+3: field 0F: squelch level (00-09)
+4: field F0: UNKNOWN 00
+4: field 0F: timeout (00:off, 01..09:n*30s)
+5: field F0: UNKNOWN 00
+5: field 0F: vox gain level (00:off, 01..09:1..9)
+6: field F8: UNKNOWN 00
+6: field 07: vox delay time (00..03:1..4s)
+7: field FC: UNKNOWN 00
+7: field 03: VFO step (00:5k, 01:6.25k, 02:10k, 03:12.5k, 04:25k)
+8: field FC: UNKNOWN 00
+8: field 03: PttID type (00:MSK, 01:DTMF, 02:5-tone)
+9: field C0: UNKNOWN 00
+9: field 30: side button hold mode (00:optionalsign call, 10 emergency alarm, 20:send 1750Hz signal, 30:monitor momentarily)
+9: field 08: DTMF SideTone (00:no, 08:yes)
+9: field 04: UNKNOWN 00
+9: field 03: side button click mode (00:optionalsign call, 01:emergency alarm, 02:send 1750Hz signal, 03:monitor momentarily)
+A: field F0: Roger tone (00..90:tone 1..10)
+A: field 08: Main watch  (00:A, 08:B)
+A: field 07: UNKNOWN 00
+B: field FF: UNKNOWN 00
+C: field FF: UNKNOWN FF
+D: field FF: priority channel (FF:none, 00..7f:channel 1..128)
+E: field FF: wait time (xx:xx*0.05, stock software only lists 0.3, 0.5, and integers in the range 1..12)
+E: field FF: UNKNOWN FF
+
+address 0c70 continues on the optional features data
+0..7: unknown 35 32 33 38 37 31 ff ff
+8..D: boot message string
+
+address 0c80 contains the PttID BOT and EOT strings
+
+if MSK:
+0..5: BOT string (FF for unused space)
+6   : unused* (FF)
+7   : garbage*
+8..D: EOT string (FF for unused space)
+E   : unused* (FF)
+F   : garbage
+
+if DTMF:
+0..3: BOT sequence (single hex digit sequence, 3 to 8 digits in length, F for not used values)
+4..5: garbage*
+6   : unused* (FF)
+7   : BOT sequence length 03..08
+8..B: EOT sequence (single hex digit sequence, 3 to 8 digits in length, F for not used values)
+C..D: garbage*
+D   : unused* (FF)
+F   : EOT sequence length 03..08
+
+if 5-tone:
+0..1 and upper half of 2: BOT sequence (5 hex digits)
+lower half of 2: unused* (F)
+3..7: garbage*
+8..9 and upper half of A: EOT sequence (5 hex digits)
+lower half of A: unused* (F)
+B..F: garbage*
+
+* The difference between fields marked unused and garbage, is that the unused fields
+have all bits set in the applicable range, whereas fields marked garbage contain whatever
+was in the buffer the last time the stock program executed a write operation
+
+
+--------------------------------------------------------------------------------
+
+0c90 FM RADIO DATA
+0   : range FF: UNKNOWN unused/constant 00?
+1   : range E0: UNKNOWN unused/constant 00?
+1   : range 10: channel stepping (00:100kHz, 10:50kHz)
+1   : range 0F: FM radio frequency range (00:87.5-108.0MHz, 02:76.0-91.0MHz, 04:76.0-108.0MHz, 06:65.0-76.0MHz)
+2..3: UNKNOWN unused/constant FF?
+4..7: radio VFO frequency as BCD 3.5, although the three least significant digits are locked to 0
+8..B: radio memory bank entry 0
+C..F: radio memory bank entry 1
+
+0ca0 contains radio memory bank entries 2..5
+0cb0 contains radio memory bank entries 6..9
+
+--------------------------------------------------------------------------------
+
+
+0cc0 MSK data
+0..3: ID code
+4..7: call list entry 1
+8..B: call list entry 2
+C..F: call list entry 3
+
+0cd0: MSK data
+0..3: call list entry 4
+4..7: call list entry 5
+8..B: call list entry 6
+C..F: call list entry 7
+
+0ce0: MSK data
+0..3: call list entry 8
+4..7: call list entry 9
+
+The call list entries are stored as ascii values, although only the characters
+'0'-'9', 'A'-'F' are allowed. If the sequence is shorter than four digits, the
+unused space is filled with FF
+
+
+--------------------------------------------------------------------------------
+
+
+address 0cf0 stores the call channel data
+
+
+--------------------------------------------------------------------------------
+
+0d00 DTMF digit timing data
+0: digit time (05..14:byte value * 10ms (range 50-200ms))
+1: inter digit time (05..14:byte value * 10ms (range 50-200ms))
+2: first digit time, (05..14:byte value * 10ms (range 50-200ms))
+3: first digit delay, (02..14:byte value * 50ms (range 100-1000ms))
+4..F unknown 02 00 ff 00 ff ff ff ff ff ff ff ff
+
+0d30
+0   : unkown (constant 00?)
+1   : unknown (changes? FF->0F observed)
+2   : group code (FF:off, 0A..0F:group code A..F)
+3   : auto reset timer (FF:off, 01..0f:byte value * 1s (range 1-15s))
+4   : alert/transpond (ff:off, 01:call alert, 02:transpond-alert, 03:transpond-id code)
+5..8: DTMF ID code (3..8 hex digits, F for unused space)
+9   : unknown (changes? FF->0F observed)
+A..C: unknown (constant? FFFFFF)
+D   : DTMF ID code sequence length 03..08
+E..F: unknown (constant? FFFF)
+
+0d40
+0..3: tx-stun code (3..8 hex digits, F for unused space)
+4   : unknown (changes? FF->0F observed)
+5..7: unknown (constant? FFFFFF)
+8   : tx stun code length (03..08, 00 if no stun code)
+9   : cancel-tx-stun code length (03..08, 00 if no cancel-tx-stun code)
+A..D: cancel-tx-stun code (3..8 hex digits, F for unused space)
+E   : unknown (changes? FF->0F observed)
+F   : unknown (constant? FF)
+
+0d50
+0..3: rx/tx-stun code (3..8 hex digits, F for unused space)
+4   : unknown (changes? FF->0F observed)
+5..7: unknown (constant? FFFFFF)
+8   : rx/tx stun code length (03..08, ff if no stun code)
+9   : cancel-rx/tx-stun code length (03..08, 00 if no cancel-rx/tx-stun code)
+A..D: cancel-rx/tx-stun code (3..8 hex digits, F for unused space)
+E   : unknown (changes? FF->0F observed)
+F   : unknown (constant? FF)
+
+0d60 to 0de0 DTMF autodial list 1-9
+0..4: DTMF code, (0..10 digits [0-9A-D], F for non-used space, except 4H, which is 0 when not used?)
+5..7: unused (constant? FFFFFF)
+8   : DTMF code length
+9..F: unused (constant? F...)
+
+
+--------------------------------------------------------------------------------
+
+
+0e00
+0    : field FF: delay, (00..ff:byte value * 10ms (range 0-2550ms))
+6    : field FF: Alert Tone/Transpond (ff:off, 00:alert tone, 01:transpond, 02:transpond-ID code)
+7    : field FF: Reset time in seconds (00:off 01..FF:byte value * 1s (range 1-255s))
+8    : field 03: 5-tone mode (00:zvei1, 01:zvei2, 02:ccir1, 03:ccitt)
+9..Bh: ID Code*
+
+0e10: unknown ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+
+0e20
+0   : field FF: ZVEI1 period (14..FF:byte value *1ms (range 20-255ms))
+1   : field F0: ZVEI1 group code (00..F0:0..F)
+1   : field 0F: ZVEI1 repeat code (0F..0F:0..F)
+2   : field FF: ZVEI2 period (14..FF:byte value *1ms (range 20-255ms))
+3   : field F0: ZVEI2 group code (00..F0:0..F)
+3   : field 0F: ZVEI2 repeat code (0F..0F:0..F)
+4   : field FF: CCIR1 period (14..FF:byte value *1ms (range 20-255ms))
+5   : field F0: CCIR1 group code (00..F0:0..F)
+5   : field 0F: CCIR1 repeat code (0F..0F:0..F)
+6   : field FF: CCITT period (14..FF:byte value *1ms (range 20-255ms))
+7   : field F0: CCITT group code (00..F0:0..F)
+7   : field 0F: CCITT repeat code (0F..0F:0..F)
+8..F: unused, but has the same shape
+
+0e30: unknown ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+
+addresses 0e40 and 0e50 stores the frequencies for the digits
+each digit frequency is represented by a 16 bit little endian integer,
+whose value is ten times the digit's frequency
+Examples:
+Block 0e40, byte 0..1 encodes the frequency for the digit 1,
+and should for zvei1 operation contain c0 5d = 0x5dc0 = 24000 = 2400.0Hz
+Block 0e50, byte C..D encodes the frequency for the digit E,
+and should for CCITT operation contain d8 59 = 0x59d8 = 23000 = 2300.0Hz
+
+0e60
+0..4: tx-stun code
+5..7: unused (constant? ffffff)
+8   : tx-stun code length
+9   : cancel-tx-stun code length
+A..E: cancel-tx-stun code
+F   : unused (constant? ff)
+
+0e70
+0..4: rx/tx-stun code
+5..7: unused (constant? ffffff)
+8   : rx/tx-stun code length
+9   : cancel-rx/tx-stun code length
+A..E: cancel-rx/tx-stun code
+F   : unused (constant? ff)
+
+0e80, 0e90 contain the nine entries* (1-9) of the 5-tone phonebook,
+each entry taking up three bytes, the lowest nibble of the last byte in each
+group is always zero
+
+* the 5-tone codes are assumed to be 5 digits long, shorter codes will be F-padded
+on the right, however some modes, like CCITT does not have a frequency for the F digit
+
+
+--------------------------------------------------------------------------------
+
+
+0e90 .. 0fb0 unknown data
+00000ea0  06 70 06 93 07 19 07 44  07 70 07 97 08 25 08 54  |.p.....D.p...%.T|
+00000eb0  08 85 09 15 09 48 09 74  10 00 10 35 10 72 11 09  |.....H.t...5.r..|
+00000ec0  11 48 11 88 12 30 12 73  13 18 13 65 14 13 14 62  |.H...0.s...e...b|
+00000ed0  15 14 15 67 15 98 16 22  16 55 16 79 17 13 17 38  |...g...".U.y...8|
+00000ee0  17 73 17 99 18 35 18 62  18 99 19 28 19 66 19 95  |.s...5.b...(.f..|
+00000ef0  20 35 20 65 21 07 21 81  22 57 22 91 23 36 24 18  | 5 e!.!."W".#6$.|
+00000f00  25 03 25 41 0c 91 0c d1  0c 51 24 41 24 fb 23 87  |%.%A.....Q$A$.#.|
+00000f10  00 23 00 25 00 26 00 31  00 32 00 43 00 47 00 51  |.#.%.&.1.2.C.G.Q|
+00000f20  00 54 00 65 00 71 00 72  00 73 00 74 01 14 01 15  |.T.e.q.r.s.t....|
+00000f30  01 16 01 25 01 31 01 32  01 34 01 43 01 52 01 55  |...%.1.2.4.C.R.U|
+00000f40  01 56 01 62 01 65 01 72  01 74 02 05 02 23 02 26  |.V.b.e.r.t...#.&|
+00000f50  02 43 02 44 02 45 02 51  02 61 02 63 02 65 02 71  |.C.D.E.Q.a.c.e.q|
+00000f60  03 06 03 11 03 15 03 31  03 43 03 46 03 51 03 64  |.......1.C.F.Q.d|
+00000f70  03 65 03 71 04 11 04 12  04 13 04 23 04 31 04 32  |.e.q.......#.1.2|
+00000f80  04 45 04 64 04 65 04 66  05 03 05 06 05 16 05 32  |.E.d.e.f.......2|
+00000f90  05 46 05 65 06 06 06 12  06 24 06 27 06 31 06 32  |.F.e.....$.'.1.2|
+00000fa0  06 54 06 62 06 64 07 03  07 12 07 23 07 31 07 32  |.T.b.d.....#.1.2|
+00000fb0  07 34 07 43 07 54 ff ff  ff ff ff ff ff ff ff ff  |.4.C.T..........|
+
