@@ -89,6 +89,7 @@ while running:
                 print("[R] sending magic block")
                 s.write(magic_last_block)
                 s.write(b'\x06')
+s.close()
 
 if mode == 'dump':
     f = open(sys.argv[2], "wb")
