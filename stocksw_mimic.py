@@ -22,7 +22,9 @@ matchoutput = b'XONLINE'
 matchinput = b'PX888D\x00\xff'
 blocksize = 64
 lowerrbound = 0
-upperrbound = 0x1000
+upperrbound = 0x1000 #exclusive
+lowerwbound = 0
+upperwbound = 0x0fc0 #exclusive
 
 def mkreadcmd(a):
     return bytearray([82, (a&0xff00)>>8, (a&0x00ff), blocksize])
@@ -47,16 +49,16 @@ if mode not in ['SH', 'SF', 'FS']:
     exit(1)
 
 print(">>> MODE: {}".format(mode))
-s = None
 f = None
-if mode[0] == 'S': # read from radio
-    s = serial.Serial(rpath, 9600, 8, serial.PARITY_NONE, 1)
-    if mode[1] == 'F':
-        f = open(wpath, 'wb')
-    s.write(matchoutput)
-    x = s.read(len(matchinput))
-    if x == matchinput:
-        print(">>> HANDSHAKE OK".format(x, matchinput))
+s = serial.Serial([wpath,rpath][mode[0]=='S'], 9600, 8, serial.PARITY_NONE, 1)
+s.write(matchoutput)
+x = s.read(len(matchinput))
+if x == matchinput:
+    print(">>> HANDSHAKE OK")
+    if mode[0] == 'S': # read from radio, write to stdout or file
+        print(">>> READING...")
+        if mode[1] == 'F':
+            f = open(wpath, 'wb')
         for blockaddr in range(lowerrbound, upperrbound, blocksize):
             s.write(mkreadcmd(blockaddr))
             x = s.read(4)
@@ -81,9 +83,19 @@ if mode[0] == 'S': # read from radio
                     f.write(block)
             else:
                 print(">>> BAD COMMAND STRING actual:{}, expected:{}".format(x, mkwritecmd(blockaddr)))
+    else: # read from file, write to radio
+        print(">>> WRITING...")
+        f = open(rpath, 'rb')
+        for blockaddr in range(lowerwbound, upperwbound, blocksize):
+            block = f.read(blocksize)
+            s.write(mkwritecmd(blockaddr))
+            s.write(block)
+            x = s.read(1)
+            if x != b'\x06':
+                print(">>> BAD FINAL ACK BYTE actual: {}, expected: {}".format(x, b'\x06'))
 
-    else:
-        print(">>> BAD MATCH STRING actual:{}, expected:{}".format(x, matchinput))
+else:
+    print(">>> BAD MATCH STRING actual:{}, expected:{}".format(x, matchinput))
 s.write(b'E')
 x = s.read(1)
 if x != b'\x06':
