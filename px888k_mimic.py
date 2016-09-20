@@ -41,7 +41,7 @@ while not matched:
     c = ord(s.read(1))
     if c == matchinput[matchindex]:
         matchindex += 1
-        if matchindex == len(matchstring):
+        if matchindex == len(matchinput):
             matched = True
     else:
         matchindex = 0
