@@ -1215,7 +1215,7 @@ class Puxing_PX888K_Radio(chirp_common.CloneModeRadio): # {{{
             integer_setting("time1", "First digit time (ms)", _dtmf_settings.timing.digit_length, 50, 200, step=10, int_from_mem=lambda x:x*10, mem_from_int=lambda x:int(x/10)),
             integer_setting("pause1", "First digit delay (ms)", _dtmf_settings.timing.digit_length, 100, 1000, step=50, int_from_mem=lambda x:x*50, mem_from_int=lambda x:int(x/50)),
 
-            list_setting("arst", "Auto reset time", _dtmf_settings.reset_time, TONE_RESET_TIME),
+            list_setting("arst", "Auto reset time", _dtmf_settings.reset_time, DTMF_TONE_RESET_TIME),
             list_setting("grp", "Group code", _dtmf_settings.group_code, DTMF_GROUPS),
             dtmf_string_setting("stunt", "TX Stun code", _dtmf_settings.tx_stun_code, _dtmf_settings.tx_stun_code_length, 3, 8),
             dtmf_string_setting("cstunt", "TX Stun cancel code", _dtmf_settings.cancel_tx_stun_code, _dtmf_settings.cancel_tx_stun_code_length, 3, 8),
