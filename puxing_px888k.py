@@ -32,7 +32,9 @@ ENABLE_DANGEROUS_EXPERIMENTAL_FEATURES = False
 ####################################################################################################
 ####################################################################################################
 
-SUPPORT_CROSS_MODE_ONLY = True
+SUPPORT_NONSPLIT_DUPLEX_ONLY = False
+SUPPORT_SPLIT_BUT_DEFAULT_TO_NONSPLIT_ALWAYS = True
+UNAMBIGUOUS_CROSS_MODES_ONLY = True
 
 MEM_FORMAT = """ // {{{
 struct {
@@ -46,7 +48,7 @@ struct {
             // 4-7
             bbcd tx_freq[4];
 
-            // 8
+            // 8-9 A-B
             struct {
                 u8 digital:1,
                    invert:1,
@@ -355,84 +357,100 @@ struct {
 } mem;
 // }}}"""
 # various magic numbers and strings, apart from the memory format {{{
-
-if ENABLE_DANGEROUS_EXPERIMENTAL_FEATURES:
+if ENABLE_DANGEROUS_EXPERIMENTAL_FEATURES: # {{{
     LOG.warn("ENABLE_DANGEROUS_EXPERIMENTAL_FEATURES AND/OR DANGEROUS FEATURES ENABLED")
     MEM_FORMAT = MEM_FORMAT % (
             "u8 _unknown_000E_1: 6, experimental_unsupported_duplex_mode_indicator: 1, experimental_unsupported_force_cross_mode_indicator: 1; u8 _unknown_000F;",
             "u8 _unknown_0C0E_1: 6, experimental_unsupported_duplex_mode_indicator: 1, experimental_unsupported_force_cross_mode_indicator: 1; u8 _unknown_0C0F;",
             "u8 _unknown_0CFE_1: 6, experimental_unsupported_duplex_mode_indicator: 1, experimental_unsupported_force_cross_mode_indicator: 1; u8 _unknown_0CFF;")
-else:
+    # we don't need these settings anymore, because it's exactly what the
+    # experimental features are about
+    SUPPORT_SPLIT_BUT_DEFAULT_TO_NONSPLIT_ALWAYS = False
+    SUPPORT_NONSPLIT_DUPLEX_ONLY = False
+    UNAMBIGUOUS_CROSS_MODES_ONLY = False
+# }}}
+else: # {{{
     MEM_FORMAT = MEM_FORMAT % (
             "u8 _unknown_000E[2];",
             "u8 _unknown_0C0E[2];",
             "u8 _unknown_0CFE[2];")
+# }}}
 
-FILE_MAGIC    = [0xc40, 0xc50, '\x50\x58\x38\x38\x38\x44\x00\xff\x13\x40\x17\x60\x40\x00\x48\x00']
-HANDSHAKE_OUT = b'XONLINE'
-HANDSHAKE_IN  = [b'PX888D\x00\xff'] # huh I thought this was a K radio!
+FILE_MAGIC           = [0xc40, 0xc50, '\x50\x58\x38\x38\x38\x44\x00\xff\x13\x40\x17\x60\x40\x00\x48\x00']
+HANDSHAKE_OUT        = b'XONLINE'
+HANDSHAKE_IN         = [b'PX888D\x00\xff'] # huh I thought this was a K radio!
 
-LOWER_READ_BOUND  = 0
-UPPER_READ_BOUND  = 0x1000 # exclusive, one more block is read than written by the stock software
-LOWER_WRITE_BOUND = 0
-UPPER_WRITE_BOUND = 0x0fc0 # exclusive
-BLOCKSIZE         = 64
+LOWER_READ_BOUND     = 0
+UPPER_READ_BOUND     = 0x1000 # exclusive, one more block is read than written by the stock software
+LOWER_WRITE_BOUND    = 0
+UPPER_WRITE_BOUND    = 0x0fc0 # exclusive
+BLOCKSIZE            = 64
 
-BANDS = [(134000000, 176000000),  # VHF
-         (400000000, 480000000)]  # UHF
+OFF_INT              = ["Off"] + [str(x+1) for x in range(100)] # lots of settings are on this form, with various lengths
+OFF_ON               = ["Off", "On"]
+INACTIVE_ACTIVE      = ["Inactive", "Active"]
+NO_YES               = ["No", "Yes"]
+YES_NO               = ["Yes", "No"]
 
-OFF_INT = ["Off"] + [str(x+1) for x in range(100)] # lots of settings are on this form, with various lengths
+BANDS                = [(134000000, 176000000),  # VHF
+                        (400000000, 480000000)]  # UHF
 
-SPECIAL_CHANNELS = {'VFO-A':-2, 'VFO-B':-1, 'CALL':0}
-SPECIAL_NUMBERS  = {-2:'VFO-A', -1:'VFO-B', 0:'CALL'}
+SPECIAL_CHANNELS     = {'VFO-A':-2, 'VFO-B':-1, 'CALL':0}
+SPECIAL_NUMBERS      = {-2:'VFO-A', -1:'VFO-B', 0:'CALL'}
 
-MODES        = [ "NFM", "FM" ]
-TONE_MODES   = [ "", "Tone", "TSQL", "DTCS", "Cross" ]
-if SUPPORT_CROSS_MODE_ONLY:
-    TONE_MODES = [ "", "Cross" ]
+DUPLEX_MODES         = ['', '+', '-', 'split']
+if SUPPORT_NONSPLIT_DUPLEX_ONLY:
+    DUPLEX_MODES     = ['', '+', '-']
 
-POWER_LEVELS = [chirp_common.PowerLevel("Low", watts   = 0.6), # google search VHF:0.5 UHF:0.7, spec lacks info
-                chirp_common.PowerLevel("High", watts = 4.5)]  # spec says VHF:4 UHF 5
-SKIP_MODES   = ["", "S"]
+TONE_MODES           = ["", "Tone", "TSQL", "DTCS", "Cross" ]
 
-BCL_MODES       = ["Off", "Carrier", "QT/DQT"]
-OFF_ON          = ["Off", "On"]
-INACTIVE_ACTIVE = ["Inactive", "Active"]
-NO_YES          = ["No", "Yes"]
-YES_NO          = ["Yes", "No"]
-SCRAMBLER_MODES = OFF_INT[0:9]
-VFO_STRIDE      = ['5kHz', '6.25kHz', '10kHz', '12.5kHz', '25kHz' ]
-DATA_MODES      = ['MSK', 'DTMF', '5-Tone' ]
-TALKBACK        = ['Off', 'Chinese', 'English' ]
+CROSS_MODES          = ["Tone->Tone", "DTCS->", "->DTCS", "Tone->DTCS", "DTCS->Tone", "->Tone", "DTCS->DTCS", "Tone->"]
+if UNAMBIGUOUS_CROSS_MODES_ONLY:
+    CROSS_MODES      = ["Tone->Tone", "DTCS->", "->DTCS", "Tone->DTCS", "DTCS->Tone", "->Tone", "DTCS->DTCS"]
 
-ASCIIPART   = ''.join([ chr(x) for x in range(0x20, 0x7f) ])
-DTMF        = "0123456789ABCD*#"
-HEXADECIMAL = "0123456789ABCDEF"
+MODES                = ["NFM", "FM" ]
 
-BOOT_MESSAGE_TYPES = ["Off", "Battery voltage", "Custom message"]
-PTT_ID_EDGES       = ["Off", "BOT", "EOT", "Both"]
-OPTSIGN_MODES      = ["None", "DTMF", "5-Tone", "MSK"]
-DUPLEX_MODES       = ['', '+', '-', 'split']
-ROGER_BEEP         = OFF_INT[0:11]
-BACKLIGHT_MODES    = ["Off", "Auto", "On"]
-BACKLIGHT_COLORS   = zip(["Blue", "Orange", "Purple"], range(1,4))
-SCAN_MODES         = ["Time", "Carrier", "Seek"]
-BUTTON_MODES       = [ "Send call list data", "Emergency alarm", "Send 1750Hz signal", "Open squelch"]
+POWER_LEVELS         = [chirp_common.PowerLevel("Low", watts                                                              = 0.6), # google search VHF:0.5 UHF:0.7, spec lacks info
+                        chirp_common.PowerLevel("High", watts = 4.5)]  # spec says VHF:4 UHF 5
 
-VOX_GAIN = OFF_INT[0:10]
+SKIP_MODES           = ["", "S"]
+BCL_MODES            = ["Off", "Carrier", "QT/DQT"]
+SCRAMBLER_MODES      = OFF_INT[0:9]
+PTT_ID_EDGES         = ["Off", "BOT", "EOT", "Both"]
+OPTSIGN_MODES        = ["None", "DTMF", "5-Tone", "MSK"]
 
-ONE_FOUR_SEC = ['1s', '2s', '3s', '4s']
-OFF_255S     = [ 'Off' ] + [ '%ds'%x for x in range(1,256) ]
-OFF_270S     = ['Off', '30s', '60s', '90s', '120s', '150s', '180s', '210s', '240s', '270s']
-OFF_15S      = OFF_255S[0:16]
+VFO_STRIDE           = ['5kHz', '6.25kHz', '10kHz', '12.5kHz', '25kHz' ]
+AB                   = ['A', 'B']
+WATCH_MODES          = ['Single watch', 'Dual watch']
+AB_MODES             = ['VFO', 'Memory index', 'Memory name', 'Memory frequency']
+SCAN_MODES           = ["Time", "Carrier", "Seek"]
+WAIT_TIMES           = [("0.3s", 6), ("0.5s", 10)] + [("%ds"%t, t*20) for t in range(1,13)]
 
-AB          = ['A', 'B']
-AB_MODES    = ['VFO', 'Memory index', 'Memory name', 'Memory frequency']
-WATCH_MODES = ['Single watch', 'Dual watch']
+BUTTON_MODES         = [ "Send call list data", "Emergency alarm", "Send 1750Hz signal", "Open squelch"]
+BOOT_MESSAGE_TYPES   = ["Off", "Battery voltage", "Custom message"]
+TALKBACK             = ['Off', 'Chinese', 'English' ]
+BACKLIGHT_COLORS     = zip(["Blue", "Orange", "Purple"], range(1,4))
+VOX_GAIN             = OFF_INT[0:10]
+VOX_DELAYS           = ['1s', '2s', '3s', '4s']
+TRANSMIT_ALARMS      = ['Off', '30s', '60s', '90s', '120s', '150s', '180s', '210s', '240s', '270s']
 
-WAIT_TIMES          = [("0.3s", 6), ("0.5s", 10)] + [("%ds"%t, t*20) for t in range(1,13)]
-DTMF_GROUPS         = zip([ "Off", "A", "B", "C", "D", "*", "#" ], [255]+range(10,16))
-FIVE_TONE_STANDARDS = ['ZVEI1', 'ZVEI2', 'CCIR1', 'CCITT']
+DATA_MODES           = ['MSK', 'DTMF', '5-Tone' ]
+
+ASCIIPART            = ''.join([ chr(x) for x in range(0x20, 0x7f) ])
+DTMF                 = "0123456789ABCD*#"
+HEXADECIMAL          = "0123456789ABCDEF"
+
+ROGER_BEEP           = OFF_INT[0:11]
+BACKLIGHT_MODES      = ["Off", "Auto", "On"]
+
+TONE_RESET_TIME      = [ 'Off' ] + [ '%ds'%x for x in range(1,256) ]
+DTMF_TONE_RESET_TIME = TONE_RESET_TIME[0:16]
+
+DTMF_GROUPS          = zip([ "Off", "A", "B", "C", "D", "*", "#" ], [255]+range(10,16))
+FIVE_TONE_STANDARDS  = ['ZVEI1', 'ZVEI2', 'CCIR1', 'CCITT']
+
+SANE_MEMORY_DEFAULT  = b"\x13\x60\x00\x00\x13\x60\x00\x00\xff\xff\xff\xff\xc0\x00\xff\xff"
+
 
 # these two option sets are listed differently, like this, in the stock software, so I'm keeping them separate for now
 # if they are in fact identical in behaviour, that should probably be amended
@@ -802,6 +820,7 @@ class Puxing_PX888K_Radio(chirp_common.CloneModeRadio): # {{{
         rf                     = chirp_common.RadioFeatures()
         rf.has_bank_index      = False
         rf.has_dtcs            = True
+        rf.has_ctone           = True
         rf.has_rx_dtcs         = True
         rf.has_dtcs_polarity   = True
         rf.has_mode            = True
@@ -810,13 +829,15 @@ class Puxing_PX888K_Radio(chirp_common.CloneModeRadio): # {{{
         rf.has_bank            = False
         rf.has_bank_names      = False
         rf.has_tuning_step     = False # not on a per channel base no
-        rf.has_ctone           = True
         rf.has_cross           = True
         rf.has_infinite_number = False
         rf.has_nostep_tuning   = False
         rf.has_comment         = False
         rf.has_settings        = True
-        rf.can_odd_split       = True
+        if SUPPORT_NONSPLIT_DUPLEX_ONLY:
+            rf.can_odd_split   = False
+        else:
+            rf.can_odd_split   = True
 
         rf.valid_modes         = MODES
         rf.valid_tmodes        = TONE_MODES
@@ -826,7 +847,7 @@ class Puxing_PX888K_Radio(chirp_common.CloneModeRadio): # {{{
         rf.valid_power_levels  = POWER_LEVELS
         rf.valid_characters    = ASCIIPART
         rf.valid_name_length   = 6
-        rf.valid_cross_modes   = chirp_common.CROSS_MODES
+        rf.valid_cross_modes   = CROSS_MODES
         rf.memory_bounds       = (1, 128)
         rf.valid_special_chans = SPECIAL_CHANNELS.keys()
         return rf
@@ -840,6 +861,16 @@ class Puxing_PX888K_Radio(chirp_common.CloneModeRadio): # {{{
     # }}}
     def sync_out(self): # {{{
         do_upload(self)
+    # }}}
+    def _set_sane_defaults(self, data): # {{{
+        # thank's thayward!
+        data.set_raw(SANE_MEMORY_DEFAULT)
+    # }}}
+    def _uninitialize(self, data,n): # {{{
+        if isinstance(data, bitwise.arrayDataElement):
+            data.set_value(b"\xff"*n)
+        else:
+            data.set_raw(b"\xff"*n)
     # }}}
     def _get_memory_structs(self, number): # {{{
         """
@@ -883,6 +914,9 @@ class Puxing_PX888K_Radio(chirp_common.CloneModeRadio): # {{{
             _present = self._memobj.mem.channel_memory.present[(i&0x78)|(7-(i&0x07))]
             _priority = self._memobj.mem.channel_memory.priority[(i&0x78)|(7-(i&0x07))]
 
+        if _data == bytearray(0xff)*16:
+            self._set_sane_defaults(_data)
+
         return index, designator, _data, _name, _present, _priority, isregular, isvfo, iscall
     # }}}
     def get_raw_memory(self, number): # {{{
@@ -925,32 +959,32 @@ class Puxing_PX888K_Radio(chirp_common.CloneModeRadio): # {{{
             if mem.freq == mem.offset:
                 mem.duplex = ''
                 mem.offset = 0
+            elif SUPPORT_NONSPLIT_DUPLEX_ONLY or SUPPORT_SPLIT_BUT_DEFAULT_TO_NONSPLIT_ALWAYS:
+                if mem.freq > mem.offset:
+                    mem.offset = mem.freq - mem.offset
+                    mem.duplex = '-'
+                elif mem.freq < mem.offset:
+                    mem.offset = mem.offset - mem.freq
+                    mem.duplex = '+'
             else:
                 mem.duplex = 'split'
-
-
 
         txtone = parse_tone(_data.tone[0])
         rxtone = parse_tone(_data.tone[1])
 
         chirp_common.split_tone_decode(mem, txtone, rxtone)
 
-        force_cross = False
 ####################################################################################################
         if ENABLE_DANGEROUS_EXPERIMENTAL_FEATURES:
             if bool(_data.experimental_unsupported_force_cross_mode_indicator) == False:
-                force_cross = True
+                if mem.tmode == 'Tone':
+                    mem.cross_mode = 'Tone->'
+                elif mem.tmode == 'TSQL':
+                    mem.cross_mode = 'Tone->Tone'
+                elif mem.tmode == 'DTCS':
+                    mem.cross_mode = 'DTCS->DTCS'
+                mem.tmode = 'Cross'
 ####################################################################################################
-
-        if SUPPORT_CROSS_MODE_ONLY and mem.tmode != '' or force_cross:
-            if mem.tmode == 'Tone':
-                mem.cross_mode = 'Tone->'
-            elif mem.tmode == 'TSQL':
-                mem.cross_mode = 'Tone->Tone'
-            elif mem.tmode == 'DTCS':
-                mem.cross_mode = 'DTCS->DTCS'
-            mem.tmode = 'Cross'
-
 
         mem.mode = MODES[bool(_data.modulation_width)]
         mem.power = POWER_LEVELS[_data.txpower]
@@ -1007,11 +1041,15 @@ class Puxing_PX888K_Radio(chirp_common.CloneModeRadio): # {{{
             if isregular:
                 _present.set_value(False)
                 _priority.set_value(False)
+                self._uninitialize(_data, 16)
+                self._uninitialize(_name, 6)
             else:
                 raise errors.InvalidValueError("Can't remove CALL and/or VFO channels!")
             return
 
         if isregular:
+            if not bool(_present):
+                self._set_sane_defaults(_data)
             n = self.filter_name(mem.name)
             _name.set_value(encode_ffstring(self.filter_name(mem.name), len(_name)))
             _present.set_value(True)
@@ -1058,13 +1096,10 @@ class Puxing_PX888K_Radio(chirp_common.CloneModeRadio): # {{{
             # that do not support it, which are most
             # (all the memory channels)
             if mem.duplex == '' or mem.duplex is None:
-                print "faking zero duplex mode"
                 _data.tx_freq.set_value(rxf)
             elif mem.duplex == '+':
-                print "faking positive duplex mode"
                 _data.tx_freq.set_value(rxf + txf)
             elif mem.duplex == '-':
-                print "faking negative duplex mode"
                 _data.tx_freq.set_value(rxf - txf)
             else: # split
                 _data.tx_freq.set_value(txf)
@@ -1154,8 +1189,8 @@ class Puxing_PX888K_Radio(chirp_common.CloneModeRadio): # {{{
             list_setting("backlc", "Backlight color", _settings.backlight_color, BACKLIGHT_COLORS),
             integer_setting("squelch", "Squelch level", _settings.squelch_level, 0, 9),
             list_setting("voxg", "Vox gain", _settings.vox_gain, VOX_GAIN),
-            list_setting("voxd", "Vox delay", _settings.vox_delay, ONE_FOUR_SEC),
-            list_setting("txal", "Trinsmit time alarm", _settings.tx_timeout, OFF_270S),
+            list_setting("voxd", "Vox delay", _settings.vox_delay, VOX_DELAYS),
+            list_setting("txal", "Trinsmit time alarm", _settings.tx_timeout, TRANSMIT_ALARMS),
             ]
         # }}}
         data_general_settings = [ # {{{
@@ -1180,7 +1215,7 @@ class Puxing_PX888K_Radio(chirp_common.CloneModeRadio): # {{{
             integer_setting("time1", "First digit time (ms)", _dtmf_settings.timing.digit_length, 50, 200, step=10, int_from_mem=lambda x:x*10, mem_from_int=lambda x:int(x/10)),
             integer_setting("pause1", "First digit delay (ms)", _dtmf_settings.timing.digit_length, 100, 1000, step=50, int_from_mem=lambda x:x*50, mem_from_int=lambda x:int(x/50)),
 
-            list_setting("arst", "Auto reset time", _dtmf_settings.reset_time, OFF_15S),
+            list_setting("arst", "Auto reset time", _dtmf_settings.reset_time, TONE_RESET_TIME),
             list_setting("grp", "Group code", _dtmf_settings.group_code, DTMF_GROUPS),
             dtmf_string_setting("stunt", "TX Stun code", _dtmf_settings.tx_stun_code, _dtmf_settings.tx_stun_code_length, 3, 8),
             dtmf_string_setting("cstunt", "TX Stun cancel code", _dtmf_settings.cancel_tx_stun_code, _dtmf_settings.cancel_tx_stun_code_length, 3, 8),
@@ -1193,7 +1228,7 @@ class Puxing_PX888K_Radio(chirp_common.CloneModeRadio): # {{{
             five_tone_string_setting("bot", "5-Tone PTT ID (BOT)", _ptt_id_data[0].entry, autowrite=False),
             five_tone_string_setting("eot", "5-Tone PTT ID (EOT)", _ptt_id_data[1].entry, autowrite=False),
             five_tone_string_setting("id", "5-tone ID code", _5tone_settings.id_code),
-            list_setting("arst", "Auto reset time", _5tone_settings.reset_time, OFF_255S),
+            list_setting("arst", "Auto reset time", _5tone_settings.reset_time, TONE_RESET_TIME),
             five_tone_string_setting("stunt", "TX Stun code", _5tone_settings.tx_stun_code),
             five_tone_string_setting("cstunt", "TX Stun cancel code", _5tone_settings.cancel_tx_stun_code),
             five_tone_string_setting("stunrt", "RX/TX Stun code", _5tone_settings.rxtx_stun_code),
