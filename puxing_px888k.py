@@ -19,22 +19,17 @@ import logging
 
 LOG = logging.getLogger(__name__)
 
-####################################################################################################
-####################################################################################################
-#
-#
-ENABLE_DANGEROUS_EXPERIMENTAL_FEATURES = False
+SUPPORT_NONSPLIT_DUPLEX_ONLY = False
+SUPPORT_SPLIT_BUT_DEFAULT_TO_NONSPLIT_ALWAYS = True
+UNAMBIGUOUS_CROSS_MODES_ONLY = True
+
+#################################################################################################### {{{
 #
 # With this setting enabled, some CHIRP settings are stored in thought-to-be junk/padding
 # data of the channel memories. Enabling this feature while using CHIRP with an actual radio
 # and any effects thereof is entirely the responsibility of the user.
-#
-####################################################################################################
-####################################################################################################
-
-SUPPORT_NONSPLIT_DUPLEX_ONLY = False
-SUPPORT_SPLIT_BUT_DEFAULT_TO_NONSPLIT_ALWAYS = True
-UNAMBIGUOUS_CROSS_MODES_ONLY = True
+ENABLE_DANGEROUS_EXPERIMENTAL_FEATURES = False
+#################################################################################################### }}}
 
 MEM_FORMAT = """ // {{{
 struct {
@@ -43,7 +38,7 @@ struct {
         struct { // {{{
 
             // 0-3
-            bbcd rx_freq[4]; // actually bbcd, but may also be ff.. if unset
+            bbcd rx_freq[4]; // may also be ff.. if unset
 
             // 4-7
             bbcd tx_freq[4];
@@ -201,6 +196,7 @@ struct {
         u8 _unknown_0C6F; // F
 
         u8 _unknown_0C70[8];
+
         char boot_message[6];
 
     } opt_settings; // }}}
@@ -288,7 +284,7 @@ struct {
 #seekto 0x0d30;
         u8 _unknown_0D30[2]; // 0-1
         u8 group_code;       // 2
-        u8 reset_time; // 3
+        u8 reset_time;       // 3
         u8 alert_transpond;  // 4
         u8 id_code[4];       // 5-8
         u8 _unknown_0D39[4]; // 9-C
@@ -331,6 +327,7 @@ struct {
                repeat_code:4;
         } tone_settings[4]; // the order is ZVEI1 ZVEI2 CCIR1 CCITT
 #seekto 0x0e40;
+        // 5-Tone tone standard frequency table
         // unknown use, changing the values does not seem to have
         // any effect on the produced sound, but the values are not
         // overwritten either.
@@ -375,7 +372,6 @@ else: # {{{
             "u8 _unknown_0C0E[2];",
             "u8 _unknown_0CFE[2];")
 # }}}
-
 FILE_MAGIC           = [0xc40, 0xc50, '\x50\x58\x38\x38\x38\x44\x00\xff\x13\x40\x17\x60\x40\x00\x48\x00']
 HANDSHAKE_OUT        = b'XONLINE'
 HANDSHAKE_IN         = [b'PX888D\x00\xff'] # huh I thought this was a K radio!
@@ -402,16 +398,16 @@ DUPLEX_MODES         = ['', '+', '-', 'split']
 if SUPPORT_NONSPLIT_DUPLEX_ONLY:
     DUPLEX_MODES     = ['', '+', '-']
 
-TONE_MODES           = ["", "Tone", "TSQL", "DTCS", "Cross" ]
+TONE_MODES           = ["", "Tone", "TSQL", "DTCS", "Cross"]
 
 CROSS_MODES          = ["Tone->Tone", "DTCS->", "->DTCS", "Tone->DTCS", "DTCS->Tone", "->Tone", "DTCS->DTCS", "Tone->"]
 if UNAMBIGUOUS_CROSS_MODES_ONLY:
     CROSS_MODES      = ["Tone->Tone", "DTCS->", "->DTCS", "Tone->DTCS", "DTCS->Tone", "->Tone", "DTCS->DTCS"]
 
-MODES                = ["NFM", "FM" ]
+MODES                = ["NFM", "FM"]
 
-POWER_LEVELS         = [chirp_common.PowerLevel("Low", watts                                                              = 0.6), # google search VHF:0.5 UHF:0.7, spec lacks info
-                        chirp_common.PowerLevel("High", watts = 4.5)]  # spec says VHF:4 UHF 5
+POWER_LEVELS         = [chirp_common.PowerLevel("Low", watts  = 0.6), # google search VHF:0.5 UHF:0.7, spec lacks info
+                        chirp_common.PowerLevel("High", watts = 4.5)] # spec says VHF:4 UHF 5
 
 SKIP_MODES           = ["", "S"]
 BCL_MODES            = ["Off", "Carrier", "QT/DQT"]
@@ -419,53 +415,48 @@ SCRAMBLER_MODES      = OFF_INT[0:9]
 PTT_ID_EDGES         = ["Off", "BOT", "EOT", "Both"]
 OPTSIGN_MODES        = ["None", "DTMF", "5-Tone", "MSK"]
 
-VFO_STRIDE           = ['5kHz', '6.25kHz', '10kHz', '12.5kHz', '25kHz' ]
+VFO_STRIDE           = ['5kHz', '6.25kHz', '10kHz', '12.5kHz', '25kHz']
 AB                   = ['A', 'B']
 WATCH_MODES          = ['Single watch', 'Dual watch']
 AB_MODES             = ['VFO', 'Memory index', 'Memory name', 'Memory frequency']
 SCAN_MODES           = ["Time", "Carrier", "Seek"]
 WAIT_TIMES           = [("0.3s", 6), ("0.5s", 10)] + [("%ds"%t, t*20) for t in range(1,13)]
 
-BUTTON_MODES         = [ "Send call list data", "Emergency alarm", "Send 1750Hz signal", "Open squelch"]
+BUTTON_MODES         = ["Send call list data", "Emergency alarm", "Send 1750Hz signal", "Open squelch"]
 BOOT_MESSAGE_TYPES   = ["Off", "Battery voltage", "Custom message"]
-TALKBACK             = ['Off', 'Chinese', 'English' ]
+TALKBACK             = ['Off', 'Chinese', 'English']
 BACKLIGHT_COLORS     = zip(["Blue", "Orange", "Purple"], range(1,4))
 VOX_GAIN             = OFF_INT[0:10]
 VOX_DELAYS           = ['1s', '2s', '3s', '4s']
 TRANSMIT_ALARMS      = ['Off', '30s', '60s', '90s', '120s', '150s', '180s', '210s', '240s', '270s']
 
-DATA_MODES           = ['MSK', 'DTMF', '5-Tone' ]
+DATA_MODES           = ['MSK', 'DTMF', '5-Tone']
 
-ASCIIPART            = ''.join([ chr(x) for x in range(0x20, 0x7f) ])
+ASCIIPART            = ''.join([chr(x) for x in range(0x20, 0x7f)])
 DTMF                 = "0123456789ABCD*#"
 HEXADECIMAL          = "0123456789ABCDEF"
 
 ROGER_BEEP           = OFF_INT[0:11]
 BACKLIGHT_MODES      = ["Off", "Auto", "On"]
 
-TONE_RESET_TIME      = [ 'Off' ] + [ '%ds'%x for x in range(1,256) ]
+TONE_RESET_TIME      = ['Off'] + ['%ds'%x for x in range(1,256)]
 DTMF_TONE_RESET_TIME = TONE_RESET_TIME[0:16]
 
-DTMF_GROUPS          = zip([ "Off", "A", "B", "C", "D", "*", "#" ], [255]+range(10,16))
+DTMF_GROUPS          = zip(["Off", "A", "B", "C", "D", "*", "#"], [255]+range(10,16))
 FIVE_TONE_STANDARDS  = ['ZVEI1', 'ZVEI2', 'CCIR1', 'CCITT']
 
-SANE_MEMORY_DEFAULT  = b"\x13\x60\x00\x00\x13\x60\x00\x00\xff\xff\xff\xff\xc0\x00\xff\xff"
+                       #    0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F
+SANE_MEMORY_DEFAULT  = b"\x14\x61\x00\x00\x14\x61\x00\x00\xff\xff\xff\xff\xc8\x00\xff\xff"
+# should mimic the defaults in the memedit MemoryEditor somewhat
 
 
-# these two option sets are listed differently, like this, in the stock software, so I'm keeping them separate for now
+# these two option sets are listed differently like this in the stock software, so I'm keeping them separate for now
 # if they are in fact identical in behaviour, that should probably be amended
 DTMF_ALERT_TRANSPOND      = zip(['Off', 'Call alert', 'Transpond-alert', 'Transpond-ID code'], [255]+range(1,4))
 FIVE_TONE_ALERT_TRANSPOND = zip(['Off', 'Alert tone', 'Transpond', 'Transpond-ID code'], [255]+range(1,4))
 
 BFM_BANDS  = ['87.5-108MHz', '76.0-91.0MHz', '76.0-108.0MHz', '65.0-76.0MHz']
 BFM_STRIDE = ['100kHz', '50kHz']
-# }}}
-def initial_handshake(pipe, tries): # {{{
-    x = False
-    for i in range(tries):
-        x = attempt_initial_handshake(pipe)
-        if x: break
-    if not x: raise errors.RadioError("Initial handshake failed all ten tries.")
 # }}}
 def piperead(pipe, amount): # {{{
     """read some data, catch exceptions, validate length of data read"""
@@ -491,6 +482,7 @@ def pipewrite(pipe, data): # {{{
         raise errors.RadioError("Tried to write %d bytes to the pipe, but wrote %d bytes instead."%(len(data), n))
 # }}}
 def attempt_initial_handshake(pipe): # {{{
+    """try to do the initial handshake"""
     pipewrite(pipe, HANDSHAKE_OUT)
     x = piperead(pipe, len(HANDSHAKE_IN[0]))
     if x in HANDSHAKE_IN:
@@ -498,10 +490,20 @@ def attempt_initial_handshake(pipe): # {{{
     LOG.debug("Handshake failed: received: "+repr(x)+" expected one of: "+repr(HANDSHAKE_IN))
     return False
 # }}}
+def initial_handshake(pipe, tries): # {{{
+    """do an initial handshake attempt up to tries times"""
+    x = False
+    for i in range(tries):
+        x = attempt_initial_handshake(pipe)
+        if x: break
+    if not x: raise errors.RadioError("Initial handshake failed all ten tries.")
+# }}}
 def mk_writecommand(addr): # {{{
+    """makes a write command from an address specification"""
     return pack('>cHc', b'W', addr, b'@')
 # }}}
 def mk_readcommand(addr): # {{{
+    """makes a read command from an address specification"""
     return pack('>cHc', b'R', addr, b'@')
 # }}}
 def expect_ack(pipe): # {{{
@@ -511,6 +513,7 @@ def expect_ack(pipe): # {{{
         raise errors.RadioError("Did not get ACK when expected.")
 # }}}
 def end_communications(pipe): # {{{
+    """tell the radio that we are done"""
     pipewrite(pipe, b'E')
     expect_ack(pipe)
 # }}}
@@ -533,6 +536,7 @@ def write_block(pipe, addr, block): # {{{
     expect_ack(pipe)
 # }}}
 def show_progress(radio, blockaddr, upper, msg): # {{{
+    """relay read/write information to the user through the gui"""
     if radio.status_fn:
         status = chirp_common.Status()
         status.cur = blockaddr
@@ -541,6 +545,7 @@ def show_progress(radio, blockaddr, upper, msg): # {{{
         radio.status_fn(status)
 # }}}
 def do_download(radio): # {{{
+    """download from the radio to the memory map"""
     initial_handshake(radio.pipe, 10)
     memory = memmap.MemoryMap(b'\xff'*0x1000)
     for blockaddr in range(LOWER_READ_BOUND, UPPER_READ_BOUND, BLOCKSIZE):
@@ -552,6 +557,7 @@ def do_download(radio): # {{{
     return memory
 # }}}
 def do_upload(radio): # {{{
+    """upload from the memory map to the radio"""
     memory = radio.get_mmap()
     initial_handshake(radio.pipe, 10)
     for blockaddr in range(LOWER_WRITE_BOUND, UPPER_WRITE_BOUND, BLOCKSIZE):
@@ -562,21 +568,24 @@ def do_upload(radio): # {{{
     end_communications(radio.pipe)
 # }}}
 def parse_tone(t): # {{{
+    """parse the tone (ctss, dtcs) part of the mmap into more easily handled data types"""
+    # [ mode, value, polarity ]
     if int(t.high) == 0x3f and int(t.low) == 0xff:
         return [None, None, None]
     elif bool(t.digital):
-        t = [ 'DTCS',
-                 (int(t.high)&0x0f)*100 + ((int(t.low)&0xf0)>>4)*10 + (int(t.low)&0x0f),
-                 ['N','R'][bool(t.invert)] ]
+        t = ['DTCS',
+             (int(t.high)&0x0f)*100 + ((int(t.low)&0xf0)>>4)*10 + (int(t.low)&0x0f),
+             ['N','R'][bool(t.invert)]]
         if t[1] not in chirp_common.DTCS_CODES: return [None, None, None]
     else:
-        t = [ 'Tone',
-                 (((int(t.high)&0xf0)>>4)*1000 + (int(t.high)&0x0f)*100 + ((int(t.low)&0xf0)>>4)*10 + (int(t.low)&0x0f))/10.0,
-                 None]
+        t = ['Tone',
+             (((int(t.high)&0xf0)>>4)*1000 + (int(t.high)&0x0f)*100 + ((int(t.low)&0xf0)>>4)*10 + (int(t.low)&0x0f))/10.0,
+             None]
         if t[1] not in chirp_common.TONES: return [None, None, None]
     return t
 # }}}
 def unparse_tone(t): # {{{
+    """parse tone data back into the format used by the radio"""
     # [ mode, value, polarity ]
     if t[0] == 'Tone':
         tint = int(t[1]*10)
@@ -601,15 +610,17 @@ def unparse_tone(t): # {{{
     return None
 # }}}
 def decode_halfbytes(data, mapping, length): # {{{
+    """construct a string from a datatype where each half-byte maps to a character"""
     s = ''
     for i in range(length):
         if i&1 == 0: # even digit
-            s += mapping[ (int(data[i>>1])&0xf0)>>4 ]
+            s += mapping[(int(data[i>>1])&0xf0)>>4]
         else: # odd digit
-            s += mapping[  int(data[i>>1])&0x0f     ]
+            s += mapping[ int(data[i>>1])&0x0f    ]
     return s
 # }}}
 def encode_halfbytes(data, datapad, mapping, fillvalue, fieldlen): # {{{
+    """encode data from a string where each character maps to a half-byte"""
     if len(data) & 1: data += datapad # pad to an even length
     o = [fillvalue] * fieldlen
     for i in range(0,len(data),2):
@@ -618,6 +629,7 @@ def encode_halfbytes(data, datapad, mapping, fillvalue, fieldlen): # {{{
     return bytearray(o)
 # }}}
 def decode_ffstring(data): # {{{
+    """decode a string delimited by 0xff"""
     s = ''
     for b in data:
         if int(b) == 0xff: break
@@ -625,32 +637,39 @@ def decode_ffstring(data): # {{{
     return s
 # }}}
 def encode_ffstring(data, fieldlen): # {{{
+    """right-pad to specified length with 0xff bytes"""
     extra = fieldlen-len(data)
     if extra > 0:
         data += '\xff'*extra
     return bytearray(data)
 # }}}
 def decode_dtmf(data, length): # {{{
+    """decode a field containing dtmf data into a string"""
     if length == 0xff: return ''
     return decode_halfbytes(data, DTMF, length)
 # }}}
 def encode_dtmf(data, length, fieldlen): # {{{
+    """encode a string containing dtmf characters into a data field"""
     return encode_halfbytes(data, '0', DTMF, b'\xff', fieldlen)
 # }}}
 def decode_5tone(data): # {{{
+    """decode a field containing 5-tone data into a string"""
     if (int(data[2])&0x0f) != 0: return ''
     return decode_halfbytes(data, HEXADECIMAL, 5)
 # }}}
 def encode_5tone(data, fieldlen): # {{{
+    """encode a string containing 5-tone characters into a data field"""
     return encode_halfbytes(data, '0', HEXADECIMAL, b'\xff', fieldlen)
 # }}}
 def decode_freq(data): # {{{
+    """decode frequency data for the broadcast fm radio memories"""
     data_out = ''
     if data[0] != 0xff:
         data_out = chirp_common.format_freq(int(decode_halfbytes(data, "0123456789", len(data)))*100000)
     return data_out
 # }}}
 def encode_freq(data, fieldlen): # {{{
+    """encode frequency data for the broadcast fm radio memories"""
     data_out = bytearray('\xff')*fieldlen
     if data != '':
         data_out = encode_halfbytes(('%%0%di'%(fieldlen<<1))%int(chirp_common.parse_freq(data)/10),'','0123456789','',fieldlen)
@@ -665,12 +684,21 @@ def sbyn(s, n): # {{{
 # ui, and the setting in the memory map of the radio, lessening the need to write large
 # chunks of code, first for populating the ui from the memory map, then secondly for
 # parsing the values back.
-# By supplying the mem entry to the setting instance, it is possible to automatically
+# By supplying the memory map entry to the setting instance, it is possible to automatically
 # 1) initialize the value of the setting, as well as 2) automatically update the memory
 # value when the user changes it in the ui, without adding any code outside the class.
 class MappedIntegerSettingValue(settings.RadioSettingValueInteger): # {{{
-    """"Integer setting, with the possibility to add translation functions"""
+    """"Integer setting, with the possibility to add translation functions between mem<->integer setting"""
     def __init__(self, val_mem, minval, maxval, step=1, int_from_mem=lambda x:int(x), mem_from_int=lambda x:x, autowrite=True):
+        """
+        val_mem      - memory map entry for the value
+        minval       - the minimum value allowed
+        maxval       - maximum value allowed
+        step         - value stepping
+        int_from_mem - function to convert memory entry to integer
+        mem_from_int - function to convert integer to memory entry
+        autowrite    - automatically write the memory map entry when the value is changed
+        """
         self._val_mem = val_mem
         self._int_from_mem = int_from_mem
         self._mem_from_int = mem_from_int
@@ -686,6 +714,14 @@ class MappedIntegerSettingValue(settings.RadioSettingValueInteger): # {{{
 class MappedListSettingValue(settings.RadioSettingValueMap): # {{{
     """Mapped list setting"""
     def __init__(self, val_mem, options, autowrite=True):
+        """
+        val_mem      - memory map entry for the value
+        options      - either a list of strings options to present, mapped to integers 0...n
+                       in the memory map entry, or a list of tuples ("option description", memory map value)
+        int_from_mem - function to convert memory entry to integer
+        mem_from_int - function to convert integer to memory entry
+        autowrite    - automatically write the memory map entry when the value is changed
+        """
         self._val_mem = val_mem
         self._autowrite = autowrite
         if not isinstance(options[0], tuple):
@@ -703,8 +739,8 @@ class MappedCodedStringSettingValue(settings.RadioSettingValueString): # {{{
     def __init__(self, val_mem, len_mem, min_length, max_length, charset=ASCIIPART, padchar=' ', autowrite=True,
             str_from_mem=lambda mve,lve:str(mve[0:int(lve)]), mem_val_from_str=lambda s,fl:s[0:fl], mem_len_from_int=lambda l:l):
         """
-        val_mem          - memory entry for the value
-        len_mem          - memory entry for the length (or None)
+        val_mem          - memory map entry for the value
+        len_mem          - memory map entry for the length (or None)
         min_length       - length that the string will be right-padded to
         max_length       - maximum length of the string, set as maxlength for the RadioSettingValueString
         charset          - the allowed charset
@@ -863,7 +899,8 @@ class Puxing_PX888K_Radio(chirp_common.CloneModeRadio): # {{{
         do_upload(self)
     # }}}
     def _set_sane_defaults(self, data): # {{{
-        # thank's thayward!
+        # thanks thayward!
+        print "using defaults "+repr(SANE_MEMORY_DEFAULT)
         data.set_raw(SANE_MEMORY_DEFAULT)
     # }}}
     def _uninitialize(self, data,n): # {{{
@@ -877,16 +914,16 @@ class Puxing_PX888K_Radio(chirp_common.CloneModeRadio): # {{{
         fetch the correct data structs no matter if its regular or special channels,
         no matter if they're referred by name or channel index
         """
-        index = 2501
-        i = -42
+        index      = 2501
+        i          = -42
         designator = 'INVALID'
-        isregular = False
-        iscall = False
-        isvfo = False
-        _data = None
-        _name = None
-        _present = None
-        _priority = None
+        isregular  = False
+        iscall     = False
+        isvfo      = False
+        _data      = None
+        _name      = None
+        _present   = None
+        _priority  = None
         if number in SPECIAL_NUMBERS.keys():
             index = number
             # speical by index
@@ -905,13 +942,13 @@ class Puxing_PX888K_Radio(chirp_common.CloneModeRadio): # {{{
             _data = self._memobj.mem.vfo_data[index+2]
         elif index == 0:
             iscall = True
-            _data = self._memobj.mem.call_channel
+            _data  = self._memobj.mem.call_channel
         elif index > 0:
             isregular = True
-            i = number - 1
-            _data = self._memobj.mem.channel_memory.data[i]
-            _name = self._memobj.mem.channel_memory.names[i].entry
-            _present = self._memobj.mem.channel_memory.present[(i&0x78)|(7-(i&0x07))]
+            i         = number - 1
+            _data     = self._memobj.mem.channel_memory.data[i]
+            _name     = self._memobj.mem.channel_memory.names[i].entry
+            _present  = self._memobj.mem.channel_memory.present[(i&0x78)|(7-(i&0x07))]
             _priority = self._memobj.mem.channel_memory.priority[(i&0x78)|(7-(i&0x07))]
 
         if _data == bytearray(0xff)*16:
@@ -927,26 +964,30 @@ class Puxing_PX888K_Radio(chirp_common.CloneModeRadio): # {{{
         mem = chirp_common.Memory()
         index, designator, _data, _name, _present, _priority, isregular, isvfo, iscall = self._get_memory_structs(number)
 
-        mem.number = index
+        mem.number      = index
         mem.extd_number = designator
 
+        # handle empty channels
         if isregular:
             if bool(_present):
                 mem.empty = False
-                mem.name = str(decode_ffstring(_name))
-                mem.skip = SKIP_MODES[1-int(_priority)]
+                mem.name  = str(decode_ffstring(_name))
+                mem.skip  = SKIP_MODES[1-int(_priority)]
             else:
                 mem.empty = True
-                mem.name = ''
+                mem.name  = ''
                 return mem
         else:
             mem.empty = False
-            mem.name = ''
+            mem.name  = ''
 
-        mem.freq = int(_data.rx_freq)*10
+        # get frequency data
+        mem.freq   = int(_data.rx_freq)*10
         mem.offset = int(_data.tx_freq)*10
 
-        # only the vfo channels support duplex, memory channels operate in split mode all the time
+        # interpret frequency data
+        # only the vfo channels support duplex,
+        # memory channels operate in split mode all the time
         if isvfo:
             mem.duplex = DUPLEX_MODES[int(_data.duplex_sign)]
             if mem.duplex == '-':
@@ -969,13 +1010,14 @@ class Puxing_PX888K_Radio(chirp_common.CloneModeRadio): # {{{
             else:
                 mem.duplex = 'split'
 
+        # get tone data
         txtone = parse_tone(_data.tone[0])
         rxtone = parse_tone(_data.tone[1])
-
         chirp_common.split_tone_decode(mem, txtone, rxtone)
-
-####################################################################################################
+#################################################################################################### {{{
         if ENABLE_DANGEROUS_EXPERIMENTAL_FEATURES:
+            # override certain settings based on flags that we have set in junk areas of the memory
+            # or basically, we BELIEVE this to be junk memory, hence why it's experimental
             if bool(_data.experimental_unsupported_force_cross_mode_indicator) == False:
                 if mem.tmode == 'Tone':
                     mem.cross_mode = 'Tone->'
@@ -984,22 +1026,25 @@ class Puxing_PX888K_Radio(chirp_common.CloneModeRadio): # {{{
                 elif mem.tmode == 'DTCS':
                     mem.cross_mode = 'DTCS->DTCS'
                 mem.tmode = 'Cross'
-####################################################################################################
+#################################################################################################### }}}
 
+        # transmit mode and power level
         mem.mode = MODES[bool(_data.modulation_width)]
         mem.power = POWER_LEVELS[_data.txpower]
 
+        # extra channel settings
         mem.extra = settings.RadioSettingGroup(
-            "extra",
-            "extra",
-            list_setting("Busy channel lockout", "BCL", _data.bcl, BCL_MODES),
-            list_setting("Swap transmit and receive frequencies", "Tx Rx freq swap", _data.txrx_reverse, OFF_ON),
-            list_setting("Use compander", "Use compander", _data.compander, OFF_ON),
-            list_setting("Use scrambler", "Use scrambler", _data.use_scrambler, NO_YES),
-            list_setting("Scrambler selection", "Voice Scrambler", _data.scrambler_type, SCRAMBLER_MODES),
-            list_setting("Automatically send ID code before and/or after transmitting", "PTT ID", _data.ptt_id_edge, PTT_ID_EDGES),
-            list_setting("Optional signal before transmission, this setting overrides the PTT ID setting.", "Opt Signal", _data.opt_signal, OPTSIGN_MODES))
+                "extra",
+                "extra",
+                list_setting("Busy channel lockout", "BCL",                              _data.bcl,            BCL_MODES),
+                list_setting("Swap transmit and receive frequencies", "Tx Rx freq swap", _data.txrx_reverse,   OFF_ON),
+                list_setting("Use compander", "Use compander",                           _data.compander,      OFF_ON),
+                list_setting("Use scrambler", "Use scrambler",                           _data.use_scrambler,   NO_YES),
+                list_setting("Scrambler selection", "Voice Scrambler",                   _data.scrambler_type, SCRAMBLER_MODES),
+                list_setting("Automatically send ID code before and/or after transmitting", "PTT ID", _data.ptt_id_edge, PTT_ID_EDGES),
+                list_setting("Optional signal before/after transmission, this setting overrides the PTT ID setting.", "Opt Signal", _data.opt_signal, OPTSIGN_MODES))
 
+#################################################################################################### {{{
         if ENABLE_DANGEROUS_EXPERIMENTAL_FEATURES:
             # override certain settings based on flags that we have set in junk areas of the memory
             # or basically, we BELIEVE this to be junk memory, hence why it's experimental
@@ -1030,13 +1075,16 @@ class Puxing_PX888K_Radio(chirp_common.CloneModeRadio): # {{{
                     else:
                         mem.offset = 0
                         mem.duplex = ''
+#################################################################################################### }}}
+
         return mem
     # }}}
     def set_memory(self, mem): # {{{
         index, designator, _data, _name, _present, _priority, isregular, isvfo, iscall = self._get_memory_structs(mem.number)
-        mem.number = index
+        mem.number      = index
         mem.extd_number = designator
 
+        # handle empty channels
         if mem.empty:
             if isregular:
                 _present.set_value(False)
@@ -1047,6 +1095,7 @@ class Puxing_PX888K_Radio(chirp_common.CloneModeRadio): # {{{
                 raise errors.InvalidValueError("Can't remove CALL and/or VFO channels!")
             return
 
+        # handle regular channel stuff like name and present+priority flags
         if isregular:
             if not bool(_present):
                 self._set_sane_defaults(_data)
@@ -1055,6 +1104,7 @@ class Puxing_PX888K_Radio(chirp_common.CloneModeRadio): # {{{
             _present.set_value(True)
             _priority.set_value(1-SKIP_MODES.index(mem.skip))
 
+        # frequency data
         rxf = int(mem.freq/10)
         txf = int(mem.offset/10)
 
@@ -1083,13 +1133,13 @@ class Puxing_PX888K_Radio(chirp_common.CloneModeRadio): # {{{
             else:
                 _data.duplex_sign.set_value(DUPLEX_MODES.index(mem.duplex))
                 _data.tx_freq.set_value(txf)
-####################################################################################################
+#################################################################################################### {{{
             if ENABLE_DANGEROUS_EXPERIMENTAL_FEATURES:
                 if mem.duplex == 'split':
                     _data.experimental_unsupported_duplex_mode_indicator.set_value(0)
                 else:
                     _data.experimental_unsupported_duplex_mode_indicator.set_value(1)
-####################################################################################################
+#################################################################################################### }}}
         # }}}
         else: # {{{
             # fake duplex modes on write, for channels
@@ -1103,15 +1153,16 @@ class Puxing_PX888K_Radio(chirp_common.CloneModeRadio): # {{{
                 _data.tx_freq.set_value(rxf - txf)
             else: # split
                 _data.tx_freq.set_value(txf)
-####################################################################################################
+#################################################################################################### {{{
             if ENABLE_DANGEROUS_EXPERIMENTAL_FEATURES:
                 if mem.duplex != 'split':
                     _data.experimental_unsupported_duplex_mode_indicator.set_value(0)
                 else:
                     _data.experimental_unsupported_duplex_mode_indicator.set_value(1)
-####################################################################################################
+#################################################################################################### }}}
         # }}}
 
+        # tone data
         tonedata = chirp_common.split_tone_encode(mem)
         for i in range(2):
             dihl = unparse_tone(tonedata[i])
@@ -1125,116 +1176,123 @@ class Puxing_PX888K_Radio(chirp_common.CloneModeRadio): # {{{
                 _data.tone[i].invert.set_value(1)
                 _data.tone[i].high.set_value(0x3f)
                 _data.tone[i].low.set_value(0xff)
-####################################################################################################
+#################################################################################################### {{{
         if ENABLE_DANGEROUS_EXPERIMENTAL_FEATURES:
             if mem.tmode == 'Cross' and mem.cross_mode in ['Tone->', 'Tone->Tone', 'DTCS->DTCS']:
                 _data.experimental_unsupported_force_cross_mode_indicator.set_value(0)
             else:
                 _data.experimental_unsupported_force_cross_mode_indicator.set_value(1)
-####################################################################################################
+#################################################################################################### }}}
 
+        # transmit mode and power level
+        _data.modulation_width.set_value(MODES.index(mem.mode))
         if str(mem.power) == 'High':
             _data.txpower.set_value(1)
         else:
             _data.txpower = 0
-        _data.modulation_width.set_value(MODES.index(mem.mode))
     # }}}
     def get_settings(self): # {{{
-        _model = self._memobj.mem.model_information
-        _settings = self._memobj.mem.opt_settings
-        _ptt_id_data = self._memobj.mem.ptt_id_data
-        _msk_settings = self._memobj.mem.msk_settings
-        _dtmf_settings = self._memobj.mem.dtmf_settings
+        _model          = self._memobj.mem.model_information
+        _settings       = self._memobj.mem.opt_settings
+        _ptt_id_data    = self._memobj.mem.ptt_id_data
+        _msk_settings   = self._memobj.mem.msk_settings
+        _dtmf_settings  = self._memobj.mem.dtmf_settings
         _5tone_settings = self._memobj.mem.five_tone_settings
-        _broadcast = self._memobj.mem.fm_radio
+        _broadcast      = self._memobj.mem.fm_radio
 
-        # for safety reasons we are setting these as read-only
+        # for safety reasons we are showing these as read-only
         model_unit_settings = [ # {{{
-            integer_setting("vhflo", "VHF lower bound", _model.band_limits[0].lower_freq, 134, 176, int_from_mem=lambda x:int(int(x)/10), mem_from_int=None),
-            integer_setting("vhfhi", "VHF upper bound", _model.band_limits[0].upper_freq, 134, 176, int_from_mem=lambda x:int(int(x)/10), mem_from_int=None),
-            integer_setting("uhflo", "UHF lower bound", _model.band_limits[1].lower_freq, 400, 480, int_from_mem=lambda x:int(int(x)/10), mem_from_int=None),
-            integer_setting("uhfhi", "UHF upper bound", _model.band_limits[1].upper_freq, 400, 480, int_from_mem=lambda x:int(int(x)/10), mem_from_int=None),
+            integer_setting(  "vhflo", "VHF lower bound", _model.band_limits[0].lower_freq, 134, 176, int_from_mem=lambda x:int(int(x)/10), mem_from_int=None),
+            integer_setting(  "vhfhi", "VHF upper bound", _model.band_limits[0].upper_freq, 134, 176, int_from_mem=lambda x:int(int(x)/10), mem_from_int=None),
+            integer_setting(  "uhflo", "UHF lower bound", _model.band_limits[1].lower_freq, 400, 480, int_from_mem=lambda x:int(int(x)/10), mem_from_int=None),
+            integer_setting(  "uhfhi", "UHF upper bound", _model.band_limits[1].upper_freq, 400, 480, int_from_mem=lambda x:int(int(x)/10), mem_from_int=None),
             ff_string_setting("model", "Model string", _model.model_string, 0, 6)
         # }}}
         ]
         for s in model_unit_settings:
             s.value.set_mutable(False)
         model_unit_settings.append(ff_string_setting("info", "Unit Information", self._memobj.mem.radio_information_string, 0, 16))
+
+        # tx/rx related settings
         radio_channel_settings = [ # {{{
-            list_setting("vfostep", "VFO step size", _settings.vfo_step, VFO_STRIDE),
-            list_setting("abwatch", "Main watch", _settings.main_watch, AB),
-            list_setting("singledualwatch", "Watch mode", _settings.main_watch, WATCH_MODES),
-            list_setting("amode", "A mode", _settings.workmode_a, AB_MODES),
-            list_setting("bmode", "B mode", _settings.workmode_b, AB_MODES),
-            integer_setting("achan", "A channel index", _settings.channel_a, 1, 128, int_from_mem=lambda i:i+1, mem_from_int=lambda i:i-1),
-            integer_setting("bchan", "B channel index", _settings.channel_b, 1, 128, int_from_mem=lambda i:i+1, mem_from_int=lambda i:i-1),
-            integer_setting("pchan", "Priority channel index", _settings.priority_channel, 1, 128, int_from_mem=lambda i:i+1, mem_from_int=lambda i:i-1),
-            list_setting("cactive", "Call channel active?", _settings.call_channel_active, NO_YES),
-            list_setting("scanm", "Scan mode", _settings.scan_mode, SCAN_MODES),
-            list_setting("swait", "Wait time", _settings.wait_time, WAIT_TIMES),
-            list_setting("tail", "Relay without disable tail (?)", _settings.relay_without_disable_tail, NO_YES), # it is unclear what this option does, possibly squelch tail elimination?
-            list_setting("batsav", "Battery saving mode", _settings.battery_save, OFF_ON),
+            list_setting(   "vfostep",   "VFO step size",                  _settings.vfo_step,                   VFO_STRIDE),
+            list_setting(   "abwatch",   "Main watch",                     _settings.main_watch,                 AB),
+            list_setting(   "watchmade", "Watch mode",                     _settings.main_watch,                 WATCH_MODES),
+            list_setting(   "amode",     "A mode",                         _settings.workmode_a,                 AB_MODES),
+            list_setting(   "bmode",     "B mode",                         _settings.workmode_b,                 AB_MODES),
+            integer_setting("achan",     "A channel index",                _settings.channel_a,                  1, 128, int_from_mem=lambda i:i+1, mem_from_int=lambda i:i-1),
+            integer_setting("bchan",     "B channel index",                _settings.channel_b,                  1, 128, int_from_mem=lambda i:i+1, mem_from_int=lambda i:i-1),
+            integer_setting("pchan",     "Priority channel index",         _settings.priority_channel,           1, 128, int_from_mem=lambda i:i+1, mem_from_int=lambda i:i-1),
+            list_setting(   "cactive",   "Call channel active?",           _settings.call_channel_active,        NO_YES),
+            list_setting(   "scanm",     "Scan mode",                      _settings.scan_mode,                  SCAN_MODES),
+            list_setting(   "swait",     "Wait time",                      _settings.wait_time,                  WAIT_TIMES),
+            list_setting(   "tail",      "Relay without disable tail (?)", _settings.relay_without_disable_tail, NO_YES), # it is unclear what this option does, possibly squelch tail elimination?
+            list_setting(   "batsav",    "Battery saving mode",            _settings.battery_save,               OFF_ON),
             ]
         # }}}
+
+        # user interface related settings
         interface_settings = [ # {{{
-            list_setting("sidehold", "Side button hold action", _settings.side_button_hold_mode, BUTTON_MODES),
-            list_setting("sideclick", "Side button click action", _settings.side_button_click_mode, BUTTON_MODES),
-            list_setting("bootmt", "Boot message type", _settings.boot_message_mode, BOOT_MESSAGE_TYPES),
-            ff_string_setting("bootm", "Boot message", _settings.boot_message, 0, 6),
-            list_setting("beep", "Key beep", _settings.key_beep, OFF_ON),
-            list_setting("talkback", "Menu talkback", _settings.voice_announce, TALKBACK),
-            list_setting("sidetone", "DTMF sidetone", _settings.dtmf_sidetone, OFF_ON),
-            list_setting("roger", "Roger beep", _settings.use_roger_beep, ROGER_BEEP),
-            list_setting("backlm", "Backlight mode", _settings.backlight_mode, BACKLIGHT_MODES),
-            list_setting("backlc", "Backlight color", _settings.backlight_color, BACKLIGHT_COLORS),
-            integer_setting("squelch", "Squelch level", _settings.squelch_level, 0, 9),
-            list_setting("voxg", "Vox gain", _settings.vox_gain, VOX_GAIN),
-            list_setting("voxd", "Vox delay", _settings.vox_delay, VOX_DELAYS),
-            list_setting("txal", "Trinsmit time alarm", _settings.tx_timeout, TRANSMIT_ALARMS),
+            list_setting(     "sidehold",  "Side button hold action",  _settings.side_button_hold_mode,  BUTTON_MODES),
+            list_setting(     "sideclick", "Side button click action", _settings.side_button_click_mode, BUTTON_MODES),
+            list_setting(     "bootmt",    "Boot message type",        _settings.boot_message_mode,      BOOT_MESSAGE_TYPES),
+            ff_string_setting("bootm",     "Boot message",             _settings.boot_message,           0, 6),
+            list_setting(     "beep",      "Key beep",                 _settings.key_beep,               OFF_ON),
+            list_setting(     "talkback",  "Menu talkback",            _settings.voice_announce,         TALKBACK),
+            list_setting(     "sidetone",  "DTMF sidetone",            _settings.dtmf_sidetone,          OFF_ON),
+            list_setting(     "roger",     "Roger beep",               _settings.use_roger_beep,         ROGER_BEEP),
+            list_setting(     "backlm",    "Backlight mode",           _settings.backlight_mode,         BACKLIGHT_MODES),
+            list_setting(     "backlc",    "Backlight color",          _settings.backlight_color,        BACKLIGHT_COLORS),
+            integer_setting(  "squelch",   "Squelch level",            _settings.squelch_level,          0, 9),
+            list_setting(     "voxg",      "Vox gain",                 _settings.vox_gain,               VOX_GAIN),
+            list_setting(     "voxd",      "Vox delay",                _settings.vox_delay,              VOX_DELAYS),
+            list_setting(     "txal",      "Trinsmit time alarm",      _settings.tx_timeout,             TRANSMIT_ALARMS),
             ]
         # }}}
+
+        # settings related to tone/data sending and interpretation
         data_general_settings = [ # {{{
-            list_setting("disptt", "Display PTT ID", _settings.dis_ptt_id, NO_YES),
+            list_setting("disptt", "Display PTT ID",     _settings.dis_ptt_id,  NO_YES),
             list_setting("pttidt", "PTT ID signal type", _settings.ptt_id_type, DATA_MODES)
             ]
         # }}}
-        data_msk_settings = [ # {{{
-            ff_string_setting("bot", "MSK PTT ID (BOT)", _ptt_id_data[0].entry, 0, 6, autowrite=False),
-            ff_string_setting("eot", "MSK PTT ID (EOT)", _ptt_id_data[1].entry, 0, 6, autowrite=False),
-            ff_string_setting("id", "MSK ID code", _msk_settings.id_code, 0, 4, charset=HEXADECIMAL),
-            list_setting("mskr", "MSK reverse", _settings.msk_reverse, NO_YES)
+        data_msk_settings     = [ # {{{
+            ff_string_setting("bot",  "MSK PTT ID (BOT)", _ptt_id_data[0].entry, 0, 6, autowrite=False),
+            ff_string_setting("eot",  "MSK PTT ID (EOT)", _ptt_id_data[1].entry, 0, 6, autowrite=False),
+            ff_string_setting("id",   "MSK ID code",      _msk_settings.id_code, 0, 4, charset=HEXADECIMAL),
+            list_setting(     "mskr", "MSK reverse",      _settings.msk_reverse, NO_YES)
             ]
         # }}}
-        data_dtmf_settings = [ # {{{
-            dtmf_string_setting("bot", "DTMF PTT ID (BOT)", _ptt_id_data[0].entry, _ptt_id_data[0].length, 0, 8, autowrite=False),
-            dtmf_string_setting("eot", "DTMF PTT ID (EOT)", _ptt_id_data[1].entry, _ptt_id_data[1].length, 0, 8, autowrite=False),
-            dtmf_string_setting("id", "DTMF ID code", _dtmf_settings.id_code, _dtmf_settings.id_code_length, 3, 8),
+        data_dtmf_settings    = [ # {{{
+            dtmf_string_setting("bot", "DTMF PTT ID (BOT)", _ptt_id_data[0].entry,  _ptt_id_data[0].length,        0, 8, autowrite=False),
+            dtmf_string_setting("eot", "DTMF PTT ID (EOT)", _ptt_id_data[1].entry,  _ptt_id_data[1].length,        0, 8, autowrite=False),
+            dtmf_string_setting("id",  "DTMF ID code",      _dtmf_settings.id_code, _dtmf_settings.id_code_length, 3, 8),
 
-            integer_setting("time", "Digit time (ms)", _dtmf_settings.timing.digit_length, 50, 200, step=10, int_from_mem=lambda x:x*10, mem_from_int=lambda x:int(x/10)),
-            integer_setting("pause", "Inter digit time (ms)", _dtmf_settings.timing.digit_length, 50, 200, step=10, int_from_mem=lambda x:x*10, mem_from_int=lambda x:int(x/10)),
-            integer_setting("time1", "First digit time (ms)", _dtmf_settings.timing.digit_length, 50, 200, step=10, int_from_mem=lambda x:x*10, mem_from_int=lambda x:int(x/10)),
+            integer_setting("time",   "Digit time (ms)",        _dtmf_settings.timing.digit_length,  50,  200, step=10, int_from_mem=lambda x:x*10, mem_from_int=lambda x:int(x/10)),
+            integer_setting("pause",  "Inter digit time (ms)",  _dtmf_settings.timing.digit_length,  50,  200, step=10, int_from_mem=lambda x:x*10, mem_from_int=lambda x:int(x/10)),
+            integer_setting("time1",  "First digit time (ms)",  _dtmf_settings.timing.digit_length,  50,  200, step=10, int_from_mem=lambda x:x*10, mem_from_int=lambda x:int(x/10)),
             integer_setting("pause1", "First digit delay (ms)", _dtmf_settings.timing.digit_length, 100, 1000, step=50, int_from_mem=lambda x:x*50, mem_from_int=lambda x:int(x/50)),
 
-            list_setting("arst", "Auto reset time", _dtmf_settings.reset_time, DTMF_TONE_RESET_TIME),
-            list_setting("grp", "Group code", _dtmf_settings.group_code, DTMF_GROUPS),
-            dtmf_string_setting("stunt", "TX Stun code", _dtmf_settings.tx_stun_code, _dtmf_settings.tx_stun_code_length, 3, 8),
-            dtmf_string_setting("cstunt", "TX Stun cancel code", _dtmf_settings.cancel_tx_stun_code, _dtmf_settings.cancel_tx_stun_code_length, 3, 8),
-            dtmf_string_setting("stunrt", "RX/TX Stun code", _dtmf_settings.rxtx_stun_code, _dtmf_settings.rxtx_stun_code_length, 3, 8),
+            list_setting(       "arst",    "Auto reset time",        _dtmf_settings.reset_time,            DTMF_TONE_RESET_TIME),
+            list_setting(       "grp",     "Group code",             _dtmf_settings.group_code,            DTMF_GROUPS),
+            dtmf_string_setting("stunt",   "TX Stun code",           _dtmf_settings.tx_stun_code,          _dtmf_settings.tx_stun_code_length,          3, 8),
+            dtmf_string_setting("cstunt",  "TX Stun cancel code",    _dtmf_settings.cancel_tx_stun_code,   _dtmf_settings.cancel_tx_stun_code_length,   3, 8),
+            dtmf_string_setting("stunrt",  "RX/TX Stun code",        _dtmf_settings.rxtx_stun_code,        _dtmf_settings.rxtx_stun_code_length,        3, 8),
             dtmf_string_setting("cstunrt", "RX/TX Stun cancel code", _dtmf_settings.cancel_rxtx_stun_code, _dtmf_settings.cancel_rxtx_stun_code_length, 3, 8),
-            list_setting("altr", "Alert/Transpond", _dtmf_settings.alert_transpond, DTMF_ALERT_TRANSPOND),
+            list_setting(       "altr",    "Alert/Transpond",        _dtmf_settings.alert_transpond,       DTMF_ALERT_TRANSPOND),
             ]
         # }}}
-        data_5tone_settings = [ # {{{
-            five_tone_string_setting("bot", "5-Tone PTT ID (BOT)", _ptt_id_data[0].entry, autowrite=False),
-            five_tone_string_setting("eot", "5-Tone PTT ID (EOT)", _ptt_id_data[1].entry, autowrite=False),
-            five_tone_string_setting("id", "5-tone ID code", _5tone_settings.id_code),
-            list_setting("arst", "Auto reset time", _5tone_settings.reset_time, TONE_RESET_TIME),
-            five_tone_string_setting("stunt", "TX Stun code", _5tone_settings.tx_stun_code),
-            five_tone_string_setting("cstunt", "TX Stun cancel code", _5tone_settings.cancel_tx_stun_code),
-            five_tone_string_setting("stunrt", "RX/TX Stun code", _5tone_settings.rxtx_stun_code),
+        data_5tone_settings   = [ # {{{
+            five_tone_string_setting("bot",     "5-Tone PTT ID (BOT)",    _ptt_id_data[0].entry,           autowrite=False),
+            five_tone_string_setting("eot",     "5-Tone PTT ID (EOT)",    _ptt_id_data[1].entry,           autowrite=False),
+            five_tone_string_setting("id",      "5-tone ID code",         _5tone_settings.id_code),
+            list_setting(            "arst",    "Auto reset time",        _5tone_settings.reset_time,      TONE_RESET_TIME),
+            five_tone_string_setting("stunt",   "TX Stun code",           _5tone_settings.tx_stun_code),
+            five_tone_string_setting("cstunt",  "TX Stun cancel code",    _5tone_settings.cancel_tx_stun_code),
+            five_tone_string_setting("stunrt",  "RX/TX Stun code",        _5tone_settings.rxtx_stun_code),
             five_tone_string_setting("cstunrt", "RX/TX Stun cancel code", _5tone_settings.cancel_rxtx_stun_code),
-            list_setting("altr", "Alert/Transpond", _5tone_settings.alert_transpond, FIVE_TONE_ALERT_TRANSPOND),
-            list_setting("std", "5-Tone standard", _5tone_settings.tone_standard, FIVE_TONE_STANDARDS),
+            list_setting(            "altr",    "Alert/Transpond",        _5tone_settings.alert_transpond, FIVE_TONE_ALERT_TRANSPOND),
+            list_setting(            "std",     "5-Tone standard",        _5tone_settings.tone_standard,   FIVE_TONE_STANDARDS),
             ]
         for i in range(4):
             s = ['z1', 'z2', 'c1', 'ct'][i]
@@ -1242,12 +1300,12 @@ class Puxing_PX888K_Radio(chirp_common.CloneModeRadio): # {{{
             data_5tone_settings.append(
                 settings.RadioSettingGroup(
                     s, '%s settings'%l,
-                    integer_setting("%speriod"%s, "%s Period (ms)"%l, _5tone_settings.tone_settings[i].period, 20, 255),
-                    list_setting("%sgrp"%s, "%s Group code"%l, _5tone_settings.tone_settings[i].group_code, HEXADECIMAL),
-                    list_setting("%srpt"%s, "%s Repeat code"%l, _5tone_settings.tone_settings[i].repeat_code, HEXADECIMAL)))
+                    integer_setting("%speriod"%s, "%s Period (ms)"%l, _5tone_settings.tone_settings[i].period,      20, 255),
+                    list_setting("%sgrp"%s, "%s Group code"%l,        _5tone_settings.tone_settings[i].group_code,  HEXADECIMAL),
+                    list_setting("%srpt"%s, "%s Repeat code"%l,       _5tone_settings.tone_settings[i].repeat_code, HEXADECIMAL)))
         # }}}
-        data_msk_call_list = []
-        data_dtmf_call_list = []
+        data_msk_call_list   = []
+        data_dtmf_call_list  = []
         data_5tone_call_list = []
         for i in range(9): # {{{
             j = i+1
@@ -1262,53 +1320,59 @@ class Puxing_PX888K_Radio(chirp_common.CloneModeRadio): # {{{
         # }}}
         data_settings = data_general_settings
         data_settings.extend([ # {{{
-                settings.RadioSettingGroup("MSK_s", "MSK settings", *data_msk_settings),
-                settings.RadioSettingGroup("MSK_c", "MSK call list", *data_msk_call_list),
-                settings.RadioSettingGroup("DTMF_s", "DTMF settings", *data_dtmf_settings),
-                settings.RadioSettingGroup("DTMF_c", "DTMF call list", *data_dtmf_call_list),
-                settings.RadioSettingGroup("5-Tone_s", "5-tone settings", *data_5tone_settings),
+                settings.RadioSettingGroup("MSK_s",    "MSK settings",     *data_msk_settings),
+                settings.RadioSettingGroup("MSK_c",    "MSK call list",    *data_msk_call_list),
+                settings.RadioSettingGroup("DTMF_s",   "DTMF settings",    *data_dtmf_settings),
+                settings.RadioSettingGroup("DTMF_c",   "DTMF call list",   *data_dtmf_call_list),
+                settings.RadioSettingGroup("5-Tone_s", "5-tone settings",  *data_5tone_settings),
                 settings.RadioSettingGroup("5-Tone_c", "5-tone call list", *data_5tone_call_list)
             ])
         # }}}
+
+        # settings related to the various ways the radio can be locked down
         locking_settings = [ # {{{
-            list_setting("autolock", "Automatic timed keypad lock",  _settings.auto_keylock, OFF_ON),
-            list_setting("lockon", "Current status of keypad lock",  _settings.keypad_lock, INACTIVE_ACTIVE),
+            list_setting("autolock", "Automatic timed keypad lock",                      _settings.auto_keylock, OFF_ON),
+            list_setting("lockon",   "Current status of keypad lock",                    _settings.keypad_lock,  INACTIVE_ACTIVE),
             list_setting("nokeypad", "Disable keypad frequency entry, menu access etc",  _settings.allow_keypad, YES_NO),
-            list_setting("rxstun", "Disable receiver functionality (rx stun)",  _settings.rx_stun, NO_YES),
-            list_setting("txstun", "Disable transmitter functionality (tx stun)",  _settings.tx_stun, NO_YES),
+            list_setting("rxstun",   "Disable receiver functionality (rx stun)",         _settings.rx_stun,      NO_YES),
+            list_setting("txstun",   "Disable transmitter functionality (tx stun)",      _settings.tx_stun,      NO_YES),
             ]
         # }}}
 
+        # broadcast fm radio settings
         broadcast_settings = [ # {{{
-            list_setting("band", "Frequency interval", _broadcast.receive_range, BFM_BANDS),
-            list_setting("stride", "VFO step", _broadcast.channel_stepping, BFM_STRIDE),
-            frequency_setting("vfo", "VFO frequency (MHz)", _broadcast.vfo_freq)
+            list_setting(     "band",   "Frequency interval",  _broadcast.receive_range,    BFM_BANDS),
+            list_setting(     "stride", "VFO step",            _broadcast.channel_stepping, BFM_STRIDE),
+            frequency_setting("vfo",    "VFO frequency (MHz)", _broadcast.vfo_freq)
         ]
         # }}}
         for i in range(10): # {{{
             broadcast_settings.append(
                 frequency_setting("bcd%d"%i, "Memory %d frequency"%i, _broadcast.memory[i].entry))
-                #settings.RadioSetting("bc%d"%i, "Channel memory %d (MHz)"%i,
-                #    settings.RadioSettingValueString(0, 100, mf)))
         # }}}
 
         return settings.RadioSettings( # {{{
-            settings.RadioSettingGroup("model", "Model/Unit information/settings", *model_unit_settings),
-            settings.RadioSettingGroup("radio", "Radio/Channel settings", *radio_channel_settings),
-            settings.RadioSettingGroup("interface", "Interface", *interface_settings),
-            settings.RadioSettingGroup("data", "Data", *data_settings),
-            settings.RadioSettingGroup("locking", "Locking", *locking_settings),
-            settings.RadioSettingGroup("broadcast", "Broadcast FM radio settings", *broadcast_settings)
+            settings.RadioSettingGroup("model",     "Model/Unit information/settings", *model_unit_settings),
+            settings.RadioSettingGroup("radio",     "Radio/Channel settings",          *radio_channel_settings),
+            settings.RadioSettingGroup("interface", "Interface",                       *interface_settings),
+            settings.RadioSettingGroup("data",      "Data",                            *data_settings),
+            settings.RadioSettingGroup("locking",   "Locking",                         *locking_settings),
+            settings.RadioSettingGroup("broadcast", "Broadcast FM radio settings",     *broadcast_settings)
         )
         # }}}
     # }}}
     def set_settings(self, s, parent=''): # {{{
 
-        ds = sbyn(s, 'data')
+        # the helper classes take care of all settings except these below, since it is a single instance
+        # of settings having interdependencies, i.e., which value that gets written to the memory depends
+        # on the value of another setting
+        # the value of the ptt id type setting decides which of the msk/dtmf/5-tone ptt id strings are
+        # actually written to memory
+        ds   = sbyn(s, 'data')
         idts = sbyn(ds, 'pttidt').value
         idtv = idts.get_value()
-        cs = sbyn(ds, idtv+'_s')
-        tss = [ sbyn(cs, e).value for e in ['bot', 'eot'] ]
+        cs   = sbyn(ds, idtv+'_s')
+        tss  = [sbyn(cs, e).value for e in ['bot', 'eot']]
 
         for ts in tss:
             ts.write_mem()
