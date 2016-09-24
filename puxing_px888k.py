@@ -22,13 +22,13 @@ LOG = logging.getLogger(__name__)
 
 SUPPORT_NONSPLIT_DUPLEX_ONLY = False
 SUPPORT_SPLIT_BUT_DEFAULT_TO_NONSPLIT_ALWAYS = True
-UNAMBIGUOUS_CROSS_MODES_ONLY = False
+UNAMBIGUOUS_CROSS_MODES_ONLY = True
 
 # With this setting enabled, some CHIRP settings are stored in
 # thought-to-be junk/padding data of the channel memories.
 # Enabling this feature while using CHIRP with an actual radio
 # and any effects thereof is entirely the responsibility of the user.
-ENABLE_DANGEROUS_EXPERIMENTAL_FEATURES = True
+ENABLE_DANGEROUS_EXPERIMENTAL_FEATURES = False
 
 MEM_FORMAT = """
 // data fields are generally written 0xff if they are unset
